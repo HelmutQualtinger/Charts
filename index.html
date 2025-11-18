@@ -1,437 +1,540 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Index Performance Comparison</title>
-    <script src="https://cdn.plot.ly/plotly-2.12.1.min.js"></script>
+    <title>Index-Performance-Vergleich (Basis 100 in CHF)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/wnumb@1.2.0/wNumb.min.js"></script>
     <style>
-        :root {
-            --primary-bg: #f8f9fa;
-            --secondary-bg: #ffffff;
-            --text-color: #212529;
-            --header-color: #343a40;
-            --accent-color: #007bff;
-            --border-color: #dee2e6;
-            --shadow: 0 4px 8px rgba(0,0,0,0.05);
-        }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--primary-bg);
-            color: var(--text-color);
-            margin: 0;
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .container {
-            width: 100%;
-            max-width: 1200px;
-            background-color: var(--secondary-bg);
-            border-radius: 8px;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border-color);
-        }
-        header {
-            padding: 1.5rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-        h1 {
-            margin: 0;
-            color: var(--header-color);
-            font-size: 1.75rem;
-            text-align: center;
-        }
-        h1 span {
-            font-size: 1rem;
-            color: #6c757d;
-            font-weight: 400;
+            font-family: sans-serif;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
         }
         .controls {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 2rem;
-            padding: 1.5rem;
-            justify-content: center;
-            align-items: center;
-            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #444;
+            border-radius: 5px;
+            background-color: #2a2a2a;
         }
-        .slider-group {
-            min-width: 250px;
-            flex: 1;
+        .controls label, .controls input { margin-right: 15px; }
+        .controls input[type="date"] {
+            background-color: #333;
+            color: #e0e0e0;
+            border: 1px solid #555;
+            padding: 5px;
         }
-        .slider-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-        .slider-group input[type="range"] {
-            width: 100%;
+        .controls button {
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
             cursor: pointer;
         }
-        .date-display {
-            font-weight: 600;
-            color: var(--accent-color);
+        .controls button:hover {
+            background-color: #0052a3;
         }
-        main {
-            padding: 1.5rem;
+        #loading { color: #4da6ff; font-weight: bold; margin-top: 10px; }
+        #error { color: #ff6b6b; font-weight: bold; margin-top: 10px; }
+        #chartContainer { width: 100%; height: 400px; position: relative; }
+        canvas { max-width: 100%; height: auto; }
+        #statistics {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 5px;
         }
-        #chart {
-            width: 100%;
-            height: 500px;
+        #statistics h2 {
+            margin-top: 0;
+            color: #4da6ff;
         }
-        #metrics {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            padding: 1.5rem;
-            margin-top: 1rem;
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #444;
         }
-        .metric-card {
-            background-color: var(--primary-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 1.5rem;
-            text-align: center;
+        .stat-row:last-child {
+            border-bottom: none;
         }
-        .metric-card h3 {
-            margin: 0 0 1rem 0;
-            font-size: 1.2rem;
+        .stat-label {
+            font-weight: bold;
         }
-        .metric-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--accent-color);
-            margin-bottom: 0.5rem;
+        #dateSlider {
+            margin: 20px 0;
         }
-        .metric-label {
-            font-size: 0.9rem;
-            color: #6c757d;
+        .noUi-connect {
+            background: #0066cc;
         }
-        #loader, #error {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(255, 255, 255, 0.9);
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: var(--shadow);
-            text-align: center;
-            z-index: 10;
+        .noUi-tooltip {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: #e0e0e0;
         }
-        #error {
-            color: #dc3545;
-        }
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--accent-color);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1rem auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .date-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            color: #e0e0e0;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <header>
-            <h1>Index Performance Comparison <br><span>Normalised to 100 in CHF</span></h1>
-        </header>
+    <h1>🚀 Index-Performance-Vergleich (CHF, Basis 100)</h1>
 
-        <div class="controls">
-            <div class="slider-group">
-                <label for="startYear">Start Year: <span id="startYearLabel" class="date-display">2000</span></label>
-                <input type="range" id="startYear" min="2000" max="2023" value="2000">
-            </div>
-            <div class="slider-group">
-                <label for="endYear">End Year: <span id="endYearLabel" class="date-display">2023</span></label>
-                <input type="range" id="endYear" min="2000" max="2023" value="2023">
-            </div>
+    <div class="controls">
+        <label>Datumsbereich:</label>
+        <div id="dateSlider"></div>
+        <div class="date-labels">
+            <span id="startDateLabel">2000-01-01</span>
+            <span id="endDateLabel">Heute</span>
         </div>
-
-        <main>
-            <div id="chart"></div>
-        </main>
-
-        <div id="metrics"></div>
+        <button onclick="loadAndRenderChart()" style="margin-top: 15px;">Chart aktualisieren</button>
     </div>
 
-    <div id="loader">
-        <div class="spinner"></div>
-        <p>Fetching and processing financial data...</p>
+    <div id="loading" style="display:none;">Lade Daten... Dies kann einige Sekunden dauern.</div>
+    <div id="error" style="display:none;">Fehler beim Laden oder Verarbeiten der Daten.</div>
+
+    <div id="chartContainer">
+        <canvas id="performanceChart"></canvas>
     </div>
-    <div id="error" style="display: none;"></div>
+
+    <div id="statistics">
+        <h2>Performance Statistiken</h2>
+        <div id="statsContent"></div>
+    </div>
 
     <script>
-        const TICKERS = {
-            dax: '^GDAXI',
-            smi: '^SSMI', // SMI Price Index, will be combined with dividend data
-            smiDividends: 'CHDVD.SW', // SMI Dividend Points
-            sp500: '^SP500TR',
-            eurChf: 'EURCHF=X',
-            usdChf: 'USDCHF=X'
+        // --- KONFIGURATION ---
+        const INDEXES = [
+            { name: 'DAX (TR)', ticker: 'dax', currency: 'EUR', color: 'rgba(0, 104, 182, 1)' },
+            { name: 'S&P 500 (TR)', ticker: 'sp500', currency: 'USD', color: 'rgba(75, 192, 192, 1)' },
+            { name: 'SMI (TR)', ticker: 'smi', currency: 'CHF', color: 'rgba(255, 99, 132, 1)' },
+            { name: 'Gold', ticker: 'gold', currency: 'USD', color: 'rgba(255, 215, 0, 1)' }
+        ];
+        const CURRENCY_TICKERS = {
+            'EUR': 'eurChf',
+            'USD': 'usdChf'
         };
+        const TARGET_CURRENCY = 'CHF';
 
-        const CACHE = {};
+        let performanceChart; // Variable für das Chart-Objekt
+        let dateSlider;
+        let selectedStartDate = '2000-01-01';
+        let selectedEndDate = new Date().toISOString().split('T')[0];
+        let lastLoadDate = new Date().toDateString();
 
-        const startYearSlider = document.getElementById('startYear');
-        const endYearSlider = document.getElementById('endYear');
-        const startYearLabel = document.getElementById('startYearLabel');
-        const endYearLabel = document.getElementById('endYearLabel');
-        const chartDiv = document.getElementById('chart');
-        const metricsDiv = document.getElementById('metrics');
-        const loader = document.getElementById('loader');
-        const errorDiv = document.getElementById('error');
-
-        function showError(message) {
-            errorDiv.textContent = `Error: ${message}. Please try again later. Some financial data APIs may be temporarily unavailable.`;
-            errorDiv.style.display = 'block';
-            loader.style.display = 'none';
-        }
-
-        async function fetchProxy(url) {
-            // Using a public CORS proxy to get around browser restrictions
-            const proxyUrl = `https://cors-anywhere.herokuapp.com/${url}`;
-            const response = await fetch(proxyUrl, { 
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
-            if (!response.ok) {
-                throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
-            }
-            return response;
-        }
-
-        async function fetchYahooData(ticker, startDate, endDate) {
-            if (CACHE[ticker]) return CACHE[ticker];
-            
-            const startTimestamp = Math.floor(startDate.getTime() / 1000);
-            const endTimestamp = Math.floor(endDate.getTime() / 1000);
-            const url = `https://query1.finance.yahoo.com/v7/finance/download/${ticker}?period1=${startTimestamp}&period2=${endTimestamp}&interval=1d&events=history`;
+        /**
+         * Ruft alle historischen Daten vom server.py ab.
+         * @returns {Promise<Object>} - Objekt mit allen Ticker-Daten.
+         */
+        async function fetchAllData() {
+            const apiUrl = 'http://127.0.0.1:5000/api/data/all';
 
             try {
-                const response = await fetchProxy(url);
-                const csvText = await response.text();
-                const lines = csvText.split('\n').slice(1);
-                const data = {};
-                lines.forEach(line => {
-                    const [date, open, high, low, close] = line.split(',');
-                    if (date && close && close !== 'null') {
-                        data[date] = parseFloat(close);
-                    }
-                });
-                CACHE[ticker] = data;
+                const response = await fetch(apiUrl);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Server-Fehler: Status ${response.status}. Antwort: ${errorText.substring(0, 100)}...`);
+                }
+
+                const data = await response.json();
                 return data;
-            } catch (e) {
-                console.error(e);
-                showError(`Could not load data for ticker ${ticker}`);
-                throw e;
+
+            } catch (error) {
+                console.error('Fehler beim Laden der Daten:', error);
+                throw new Error(`Laden der Daten fehlgeschlagen. Originalfehler: ${error.message}`);
             }
         }
-        
-        function createSMITotalReturn(smiPrice, smiDividends) {
-            const smiTR = {};
-            let lastDivPoints = 0;
-            let rebaseFactor = 1;
+        /**
+         * Hauptfunktion zum Laden und Rendern des Charts.
+         */
+        async function loadAndRenderChart() {
+            const startDate = selectedStartDate;
+            const endDate = selectedEndDate;
+            lastLoadDate = new Date().toDateString();
+            const loadingDiv = document.getElementById('loading');
+            const errorDiv = document.getElementById('error');
+            loadingDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
 
-            const sortedDates = Object.keys(smiPrice).sort();
-            
-            // Find initial dividend points before our series starts for accurate calculation
-            const sortedDivDates = Object.keys(smiDividends).sort();
-            const firstDataDate = sortedDates[0];
-            let initialDivPoints = 0;
-            for(let i = sortedDivDates.length - 1; i >= 0; i--) {
-                if (sortedDivDates[i] < firstDataDate) {
-                    initialDivPoints = smiDividends[sortedDivDates[i]];
-                    break;
-                }
+            try {
+                // 1. Alle Daten auf einmal laden
+                const allData = await fetchAllData();
+
+                // 2. Daten in das richtige Format konvertieren
+                const exchangeRates = {};
+                Object.entries(CURRENCY_TICKERS).forEach(([currency, ticker]) => {
+                    exchangeRates[currency] = allData[ticker] || {};
+                });
+
+                const indexResults = INDEXES.map(index => ({
+                    ...index,
+                    data: Object.entries(allData[index.ticker] || {}).map(([date, close]) => ({
+                        date,
+                        close
+                    }))
+                }));
+
+                // 3. Daten filtern nach Datum
+                const startTime = new Date(startDate).getTime();
+                const endTime = new Date(endDate).getTime();
+
+                indexResults.forEach(index => {
+                    index.data = index.data.filter(item => {
+                        const itemTime = new Date(item.date).getTime();
+                        return itemTime >= startTime && itemTime <= endTime;
+                    });
+                });
+
+                // 4. Daten umrechnen, zusammenführen und skalieren
+                const processedData = processAndScaleData(indexResults, exchangeRates);
+
+                // 5. Chart rendern
+                renderChart(processedData, startDate, endDate);
+
+                // 6. Statistiken berechnen und anzeigen
+                calculateAndDisplayStatistics(processedData, startDate, endDate);
+
+            } catch (error) {
+                console.error("Gesamtfehler:", error);
+                errorDiv.textContent = `Fehler: ${error.message}`;
+                errorDiv.style.display = 'block';
+                errorDiv.style.color = 'red';
+            } finally {
+                loadingDiv.style.display = 'none';
             }
-            lastDivPoints = initialDivPoints;
+        }
+
+        /**
+         * Verarbeitet die Indexdaten, rechnet sie in CHF um und skaliert sie auf Basis 100.
+         * @param {Array<Object>} indexResults - Geladene Indexdaten.
+         * @param {Object} exchangeRates - Geladene Wechselkurse.
+         * @returns {Object} - Objekt mit Labels und skalierten Datensätzen.
+         */
+        function processAndScaleData(indexResults, exchangeRates) {
+            const allDates = new Set();
+            const rawDataMap = {}; // Speichert die Indexdaten nach Datum und Indexname
+
+            // 1. Rohdaten zusammenführen und alle vorhandenen Daten finden
+            indexResults.forEach(index => {
+                const indexName = index.name;
+                rawDataMap[indexName] = {};
+                index.data.forEach(item => {
+                    // Währungsumrechnung anwenden
+                    let chfValue = item.close;
+                    if (index.currency === 'EUR') {
+                        const rate = exchangeRates['EUR'][item.date];
+                        if (rate) chfValue *= rate;
+                    } else if (index.currency === 'USD') {
+                        const rate = exchangeRates['USD'][item.date];
+                        if (rate) chfValue *= rate;
+                    }
+
+                    if (chfValue) {
+                        rawDataMap[indexName][item.date] = chfValue;
+                        allDates.add(item.date);
+                    }
+                });
+            });
+
+            const sortedDates = Array.from(allDates).sort();
+
+            // Filtere nur Monatsenddaten (letzter Tag jedes Monats)
+            const monthEndDates = [];
+            let currentMonth = null;
+            let lastDateInMonth = null;
 
             sortedDates.forEach(date => {
-                const price = smiPrice[date];
-                const currentDivPoints = smiDividends[date] || lastDivPoints;
+                const d = new Date(date);
+                const monthKey = `${d.getFullYear()}-${d.getMonth()}`;
 
-                if (currentDivPoints > lastDivPoints) {
-                    const prevPrice = smiPrice[Object.keys(smiPrice).filter(d => d < date).pop()];
-                    if (prevPrice) {
-                        rebaseFactor *= (prevPrice + (currentDivPoints - lastDivPoints)) / prevPrice;
+                if (currentMonth !== monthKey) {
+                    if (lastDateInMonth) {
+                        monthEndDates.push(lastDateInMonth);
                     }
-                    lastDivPoints = currentDivPoints;
+                    currentMonth = monthKey;
                 }
-                smiTR[date] = price * rebaseFactor;
+                lastDateInMonth = date;
             });
-            return smiTR;
-        }
 
+            // Letzten Monat hinzufügen
+            if (lastDateInMonth) {
+                monthEndDates.push(lastDateInMonth);
+            }
 
-        async function getAllData() {
-            const today = new Date();
-            const maxEndDate = new Date(today.getFullYear(), 11, 31);
-            const startDate = new Date(2000, 0, 1);
+            const finalLabels = [];
+            const datasets = INDEXES.map(index => ({
+                label: index.name,
+                data: [],
+                borderColor: index.color,
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                tension: 0.1,
+                hidden: false
+            }));
 
-            const promises = Object.values(TICKERS).map(ticker => fetchYahooData(ticker, startDate, maxEndDate));
+            // 2. Skalierungsfaktor bestimmen und endgültige Daten erstellen
+            const initialValues = {}; // Speichert den ersten verfügbaren Wert für jeden Index
+            const lastKnownValues = {}; // Für Forward-Fill
+
+            for (const date of monthEndDates) {
+                const dailyValues = {};
+                let hasAnyData = false;
+
+                // Sammle Werte für alle Indizes (mit Forward-Fill für fehlende Daten)
+                for (const index of INDEXES) {
+                    let value = rawDataMap[index.name][date];
+
+                    // Forward-Fill: Verwende letzten bekannten Wert, wenn aktueller fehlt
+                    if (!value && lastKnownValues[index.name]) {
+                        value = lastKnownValues[index.name];
+                    }
+
+                    if (value) {
+                        dailyValues[index.name] = value;
+                        lastKnownValues[index.name] = value;
+                        hasAnyData = true;
+
+                        // Setze Basis-Wert für jeden Index beim ersten Auftreten
+                        if (!initialValues[index.name]) {
+                            initialValues[index.name] = value;
+                        }
+                    }
+                }
+
+                // Nur Datenpunkte hinzufügen, wenn mindestens ein Index Daten hat
+                if (hasAnyData) {
+                    // Datenpunkt auf Basis 100 skalieren und hinzufügen
+                    finalLabels.push(date);
+                    INDEXES.forEach((index, i) => {
+                        if (dailyValues[index.name] && initialValues[index.name]) {
+                            const scaledValue = (dailyValues[index.name] / initialValues[index.name]) * 100;
+                            datasets[i].data.push({ x: date, y: scaledValue });
+                        } else if (datasets[i].data.length > 0) {
+                            // Wenn kein Wert vorhanden, verwende letzten Wert
+                            const lastValue = datasets[i].data[datasets[i].data.length - 1].y;
+                            datasets[i].data.push({ x: date, y: lastValue });
+                        } else {
+                            // Noch keine Daten für diesen Index, füge null hinzu
+                            datasets[i].data.push({ x: date, y: null });
+                        }
+                    });
+                }
+            }
             
-            try {
-                await Promise.all(promises);
-                
-                // Combine SMI price and dividends to create SMI Total Return
-                CACHE.smi_tr = createSMITotalReturn(CACHE[TICKERS.smi], CACHE[TICKERS.smiDividends]);
-
-                loader.style.display = 'none';
-                return true;
-            } catch (e) {
-                return false;
-            }
+            return { labels: finalLabels, datasets };
         }
 
-        function updateChartAndMetrics() {
-            const start = parseInt(startYearSlider.value);
-            const end = parseInt(endYearSlider.value);
+        /**
+         * Erstellt oder aktualisiert das Chart.js-Chart.
+         * @param {Object} data - Die vorbereiteten Chart-Daten.
+         * @param {string} startDate - Startdatum.
+         * @param {string} endDate - Enddatum.
+         */
+        function renderChart(data, startDate, endDate) {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
 
-            if (start > end) {
-                endYearSlider.value = start;
-                endYearLabel.textContent = start;
-                updateChartAndMetrics();
-                return;
+            if (performanceChart) {
+                performanceChart.destroy(); // Vorhandenes Chart zerstören, falls vorhanden
             }
 
-            startYearLabel.textContent = start;
-            endYearLabel.textContent = end;
-
-            const startDate = new Date(start, 0, 1);
-            const endDate = new Date(end, 11, 31);
-
-            const alignedData = {
-                dates: [],
-                dax: [],
-                smi: [],
-                sp500: []
-            };
-
-            let currentDate = new Date(startDate);
-            let lastValues = {
-                dax: null, smi: null, sp500: null,
-                eurChf: null, usdChf: null
-            };
-
-            while (currentDate <= endDate) {
-                const dateStr = currentDate.toISOString().split('T')[0];
-                
-                const eurChfRate = CACHE[TICKERS.eurChf][dateStr] || lastValues.eurChf;
-                const usdChfRate = CACHE[TICKERS.usdChf][dateStr] || lastValues.usdChf;
-                const daxValue = CACHE[TICKERS.dax][dateStr];
-                const smiValue = CACHE.smi_tr[dateStr];
-                const sp500Value = CACHE[TICKERS.sp500][dateStr];
-
-                if (eurChfRate && usdChfRate && (daxValue || smiValue || sp500Value)) {
-                    alignedData.dates.push(dateStr);
-                    
-                    const daxChf = (daxValue || lastValues.dax) * eurChfRate;
-                    const smiChf = smiValue || lastValues.smi;
-                    const sp500Chf = (sp500Value || lastValues.sp500) * usdChfRate;
-
-                    alignedData.dax.push(daxChf);
-                    alignedData.smi.push(smiChf);
-                    alignedData.sp500.push(sp500Chf);
-
-                    lastValues = {
-                        dax: daxChf, smi: smiChf, sp500: sp500Chf,
-                        eurChf: eurChfRate, usdChf: usdChfRate
-                    };
+            performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: data.datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#e0e0e0'
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Index Performance Vergleich (Basis 100 in CHF)',
+                            font: { size: 16 },
+                            color: '#e0e0e0'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y.toFixed(2) + ' (Basis 100)';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'year',
+                                displayFormats: {
+                                    year: 'yyyy'
+                                }
+                            },
+                            ticks: {
+                                source: 'auto',
+                                autoSkip: true,
+                                maxRotation: 0,
+                                color: '#e0e0e0'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Datum',
+                                color: '#e0e0e0'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            min: new Date(startDate).getTime(),
+                            max: new Date(endDate).getTime()
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Indexwert (Basis 100)',
+                                color: '#e0e0e0'
+                            },
+                            ticks: {
+                                color: '#e0e0e0'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            beginAtZero: false,
+                            suggestedMin: 80
+                        }
+                    }
                 }
-                currentDate.setDate(currentDate.getDate() + 1);
-            }
-
-            // Normalize data
-            const firstDax = alignedData.dax.find(v => v !== null);
-            const firstSmi = alignedData.smi.find(v => v !== null);
-            const firstSp500 = alignedData.sp500.find(v => v !== null);
-
-            const normalizedDax = alignedData.dax.map(v => v / firstDax * 100);
-            const normalizedSmi = alignedData.smi.map(v => v / firstSmi * 100);
-            const normalizedSp500 = alignedData.sp500.map(v => v / firstSp500 * 100);
-
-            // Render Chart
-            const traces = [
-                { x: alignedData.dates, y: normalizedDax, name: 'DAX', line: { color: '#007bff' } },
-                { x: alignedData.dates, y: normalizedSmi, name: 'SMI (TR)', line: { color: '#dc3545' } },
-                { x: alignedData.dates, y: normalizedSp500, name: 'S&P 500 (TR)', line: { color: '#28a745' } }
-            ];
-
-            Plotly.react(chartDiv, traces, {
-                title: `Index Performance (${start} - ${end})`,
-                yaxis: { title: 'Normalized Value (CHF)' },
-                xaxis: { title: 'Date' }
             });
+        }
 
-            // Calculate and Render Metrics
-            metricsDiv.innerHTML = '';
-            const indices = [
-                { name: 'DAX', data: normalizedDax },
-                { name: 'SMI (TR)', data: normalizedSmi },
-                { name: 'S&P 500 (TR)', data: normalizedSp500 }
-            ];
+        /**
+         * Berechnet und zeigt Statistiken (CAGR und Kursanstieg) an.
+         */
+        function calculateAndDisplayStatistics(data, startDate, endDate) {
+            const statsContent = document.getElementById('statsContent');
+            statsContent.innerHTML = '';
 
-            const years = (endDate - startDate) / (1000 * 60 * 60 * 24 * 365.25);
+            data.datasets.forEach(dataset => {
+                if (dataset.data.length === 0) return;
 
-            indices.forEach(index => {
-                const lastValue = index.data[index.data.length - 1];
-                const growth = lastValue - 100;
-                const cagr = (Math.pow(lastValue / 100, 1 / years) - 1) * 100;
+                const firstValue = dataset.data[0].y;
+                const lastValue = dataset.data[dataset.data.length - 1].y;
+                const totalReturn = ((lastValue - firstValue) / firstValue) * 100;
 
-                const card = `
-                    <div class="metric-card">
-                        <h3>${index.name}</h3>
-                        <p class="metric-value">${growth.toFixed(2)}%</p>
-                        <p class="metric-label">Total Growth</p>
-                        <p class="metric-value">${cagr.toFixed(2)}%</p>
-                        <p class="metric-label">CAGR</p>
+                // CAGR berechnen
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                const years = (end - start) / (1000 * 60 * 60 * 24 * 365.25);
+                const cagr = (Math.pow(lastValue / firstValue, 1 / years) - 1) * 100;
+
+                const statRow = document.createElement('div');
+                statRow.className = 'stat-row';
+                statRow.innerHTML = `
+                    <div class="stat-label" style="color: ${dataset.borderColor}">${dataset.label}</div>
+                    <div>
+                        <span style="margin-right: 20px;">Kursanstieg: <strong>${totalReturn.toFixed(2)}%</strong></span>
+                        <span>CAGR: <strong>${cagr.toFixed(2)}%</strong></span>
                     </div>
                 `;
-                metricsDiv.innerHTML += card;
+                statsContent.appendChild(statRow);
             });
         }
 
-        async function init() {
-            const today = new Date();
-            const currentYear = today.getFullYear();
-            startYearSlider.max = currentYear -1;
-            endYearSlider.max = currentYear;
-            endYearSlider.value = currentYear;
-            startYearLabel.textContent = startYearSlider.value;
-            endYearLabel.textContent = endYearSlider.value;
+        // Initialisiere Date Range Slider
+        function initDateSlider() {
+            const minDate = new Date('2000-01-01').getTime();
+            const maxDate = new Date().getTime();
 
-            const success = await getAllData();
-            if (success) {
-                updateChartAndMetrics();
-                startYearSlider.addEventListener('input', () => {
-                    startYearLabel.textContent = startYearSlider.value;
-                    if (parseInt(startYearSlider.value) > parseInt(endYearSlider.value)) {
-                        endYearSlider.value = startYearSlider.value;
-                        endYearLabel.textContent = startYearSlider.value;
+            dateSlider = document.getElementById('dateSlider');
+
+            noUiSlider.create(dateSlider, {
+                start: [minDate, maxDate],
+                connect: true,
+                range: {
+                    'min': minDate,
+                    'max': maxDate
+                },
+                step: 24 * 60 * 60 * 1000, // 1 Tag
+                tooltips: [
+                    {
+                        to: function(value) {
+                            return new Date(value).toISOString().split('T')[0];
+                        }
+                    },
+                    {
+                        to: function(value) {
+                            return new Date(value).toISOString().split('T')[0];
+                        }
                     }
-                });
-                endYearSlider.addEventListener('input', () => {
-                    endYearLabel.textContent = endYearSlider.value;
-                     if (parseInt(startYearSlider.value) > parseInt(endYearSlider.value)) {
-                        startYearSlider.value = endYearSlider.value;
-                        startYearLabel.textContent = endYearSlider.value;
-                    }
-                });
-                startYearSlider.addEventListener('change', updateChartAndMetrics);
-                endYearSlider.addEventListener('change', updateChartAndMetrics);
+                ]
+            });
+
+            dateSlider.noUiSlider.on('update', function(values) {
+                selectedStartDate = new Date(parseInt(values[0])).toISOString().split('T')[0];
+                selectedEndDate = new Date(parseInt(values[1])).toISOString().split('T')[0];
+                document.getElementById('startDateLabel').textContent = selectedStartDate;
+                document.getElementById('endDateLabel').textContent = selectedEndDate;
+            });
+
+            // Automatisches Nachladen bei Slider-Änderung (nach dem Loslassen)
+            dateSlider.noUiSlider.on('change', function(values) {
+                if (performanceChart) {
+                    console.log('Slider geändert, lade Daten neu...');
+                    loadAndRenderChart();
+                }
+            });
+        }
+
+        // Automatisches Nachladen bei Datumswechsel
+        function checkForDateChange() {
+            const currentDate = new Date().toDateString();
+            if (currentDate !== lastLoadDate && performanceChart) {
+                console.log('Datumswechsel erkannt, lade Daten neu...');
+                loadAndRenderChart();
             }
         }
 
-        window.onload = init;
+        // Prüfe alle 5 Minuten auf Datumswechsel
+        setInterval(checkForDateChange, 5 * 60 * 1000);
+
+        // Prüfe auch beim Fokus der Seite
+        window.addEventListener('focus', checkForDateChange);
+
+        // Starte das Chart beim Laden der Seite
+        document.addEventListener('DOMContentLoaded', () => {
+             initDateSlider();
+             const errorDiv = document.getElementById('error');
+             errorDiv.textContent = 'Der Server (yfinance) läuft auf http://127.0.0.1:5000. Klicken Sie auf "Chart aktualisieren", um die Daten zu laden.';
+             errorDiv.style.display = 'block';
+             errorDiv.style.color = 'green';
+        });
+
     </script>
+
 </body>
 </html>
