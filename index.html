@@ -95,7 +95,7 @@
         <label>Datumsbereich:</label>
         <div id="dateSlider"></div>
         <div class="date-labels">
-            <span id="startDateLabel">2000-01-01</span>
+            <span id="startDateLabel">2003-01-01</span>
             <span id="endDateLabel">Heute</span>
         </div>
         <button onclick="loadAndRenderChart()" style="margin-top: 15px;">Chart aktualisieren</button>
@@ -129,7 +129,7 @@
 
         let performanceChart; // Variable für das Chart-Objekt
         let dateSlider;
-        let selectedStartDate = '2000-01-01';
+        let selectedStartDate = '2003-01-01';
         let selectedEndDate = new Date().toISOString().split('T')[0];
         let lastLoadDate = new Date().toDateString();
 
@@ -467,7 +467,7 @@
 
         // Initialisiere Date Range Slider
         function initDateSlider() {
-            const minDate = new Date('2000-01-01').getTime();
+            const minDate = new Date('2003-01-01').getTime();
             const maxDate = new Date().getTime();
 
             dateSlider = document.getElementById('dateSlider');

@@ -36,8 +36,8 @@ def get_ticker_data(ticker):
 
         symbol = TICKERS[ticker]
 
-        # Fetch data from 2000 to present
-        start_date = '2000-01-01'
+        # Fetch data from Sept 2003 to present (USD/CHF data available from Sept 2003)
+        start_date = '2003-09-01'
         end_date = datetime.now().strftime('%Y-%m-%d')
 
         print(f"Fetching {ticker} ({symbol}) from {start_date} to {end_date}...")
@@ -73,7 +73,7 @@ def get_all_data():
         for ticker, symbol in TICKERS.items():
             print(f"Fetching {ticker} ({symbol})...")
 
-            start_date = '2000-01-01'
+            start_date = '2003-09-01'
             end_date = datetime.now().strftime('%Y-%m-%d')
 
             data = yf.download(symbol, start=start_date, end=end_date, progress=False)
