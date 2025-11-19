@@ -102,5 +102,5 @@ def get_all_data():
 
 if __name__ == '__main__':
     print("Starting Flask server...")
-    print("Access the application at: http://localhost:5000")
-    app.run(debug=True, port=5000)
+    print("Access the application at: http://localhost:5002")
+    app.run(debug=True, port=5002)
