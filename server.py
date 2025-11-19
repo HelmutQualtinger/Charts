@@ -1,17 +1,23 @@
 #!/usr/bin/env python3
 """
-Flask server to fetch financial data using yfinance
+Flask + Dash server to display financial data using Plotly
 """
-from flask import Flask, jsonify, send_from_directory
-from flask_cors import CORS
+from flask import Flask
+import dash
+from dash import dcc, html, Input, Output
+import plotly.graph_objects as go
 import yfinance as yf
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 from smic import smi as smi_data
 
-app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+# Flask app
+server = Flask(__name__)
 
+# Dash app integrated with Flask
+app = dash.Dash(__name__, server=server, url_base_pathname='/')
+
+# Ticker mappings
 TICKERS = {
     'dax': '^GDAXI',  # DAX Total Return
     'smi': 'SMIC.SW',  # SMI Total Return Index
@@ -21,126 +27,377 @@ TICKERS = {
     'usdChf': 'USDCHF=X'
 }
 
+# Index configuration
+INDEXES = [
+    {'name': 'DAX (TR)', 'ticker': 'dax', 'currency': 'EUR', 'color': 'rgb(0, 104, 182)'},
+    {'name': 'S&P 500 (TR)', 'ticker': 'sp500', 'currency': 'USD', 'color': 'rgb(75, 192, 192)'},
+    {'name': 'SMI (TR)', 'ticker': 'smi', 'currency': 'CHF', 'color': 'rgb(255, 99, 132)'},
+    {'name': 'Gold', 'ticker': 'gold', 'currency': 'USD', 'color': 'rgb(255, 215, 0)'}
+]
 
-@app.route('/')
-def index():
-    """Serve the main HTML file"""
-    return send_from_directory('.', 'index.html')
 
+def fetch_all_data():
+    """Fetch all ticker data from yfinance"""
+    result = {}
+    start_date = '2000-01-01'
+    end_date = datetime.now().strftime('%Y-%m-%d')
 
-@app.route('/api/data/<ticker>')
-def get_ticker_data(ticker):
-    """Fetch data for a specific ticker"""
-    try:
+    for ticker, symbol in TICKERS.items():
         if ticker == 'smi':
-            print("Fetching hardcoded SMI data...")
-            return jsonify(smi_data)
+            print(f"Using hardcoded SMI data...")
+            result['smi'] = pd.Series(smi_data)
+            result['smi'].index = pd.to_datetime(result['smi'].index)
+            continue
 
-        if ticker not in TICKERS:
-            return jsonify({'error': f'Unknown ticker: {ticker}'}), 400
-
-        symbol = TICKERS[ticker]
-
-        # Fetch data from 2000 to present (to match SMI hardcoded data)
-        start_date = '2000-01-01'
-        end_date = datetime.now().strftime('%Y-%m-%d')
-
-        print(f"Fetching {ticker} ({symbol}) from {start_date} to {end_date}...")
-
-        # Download data using yfinance
-        data = yf.download(symbol, start=start_date, end=end_date, progress=False)
-
-        if data.empty:
-            return jsonify({'error': f'No data available for {symbol}'}), 404
-
-        # Convert to dictionary format: {date: close_price}
-        result = {}
-        for date, row in data.iterrows():
-            date_str = date.strftime('%Y-%m-%d')
-            close_price = float(row['Close'])
-            result[date_str] = close_price
-
-        print(f"Successfully fetched {len(result)} data points for {ticker}")
-
-        return jsonify(result)
-
-    except Exception as e:
-        print(f"Error fetching {ticker}: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/data/all')
-def get_all_data():
-    """Fetch all ticker data at once"""
-    try:
-        result = {}
-
-        for ticker, symbol in TICKERS.items():
-            if ticker == 'smi':
-                smi_dates = sorted(smi_data.keys())
-                print(f"Using hardcoded SMI data...")
-                print(f"  → {len(smi_data)} data points (first: {smi_dates[0]}, last: {smi_dates[-1]})")
-                result['smi'] = smi_data
-                continue
-
-            print(f"Fetching {ticker} ({symbol})...")
-
-            start_date = '2000-01-01'
-            end_date = datetime.now().strftime('%Y-%m-%d')
-
-            data = yf.download(symbol, start=start_date, end=end_date, progress=False)
-
-            if data.empty:
+        print(f"Fetching {ticker} ({symbol})...")
+        try:
+            data = yf.download(symbol, start=start_date, end=end_date, progress=False, auto_adjust=True)
+            if not data.empty:
+                # Ensure we get a Series, not a DataFrame
+                close_data = data['Close']
+                if isinstance(close_data, pd.DataFrame):
+                    # If multiple columns, take the first one
+                    close_data = close_data.iloc[:, 0]
+                result[ticker] = close_data
+                print(f"  → {len(data)} data points")
+            else:
                 print(f"Warning: No data for {ticker}")
-                result[ticker] = {}
+                result[ticker] = pd.Series(dtype=float)
+        except Exception as e:
+            print(f"Error fetching {ticker}: {e}")
+            result[ticker] = pd.Series(dtype=float)
+
+    # Back-fill exchange rates to 2000-01-01
+    for currency_ticker in ['eurChf', 'usdChf']:
+        if currency_ticker in result and not result[currency_ticker].empty:
+            first_rate = result[currency_ticker].iloc[0]
+            first_date = result[currency_ticker].index[0]
+
+            # Create date range from 2000-01-01 to first available date
+            start = pd.Timestamp('2000-01-01')
+            if first_date > start:
+                date_range = pd.date_range(start=start, end=first_date - timedelta(days=1), freq='D')
+                backfill = pd.Series(first_rate, index=date_range)
+                result[currency_ticker] = pd.concat([backfill, result[currency_ticker]]).sort_index()
+                print(f"  Back-filled {currency_ticker} with {len(date_range)} days")
+
+    return result
+
+
+def process_and_scale_data(all_data, start_date, end_date):
+    """
+    Convert to CHF, filter to month-end dates, and normalize to base 100
+
+    Returns:
+        dict: Processed data ready for plotting
+    """
+    # Filter data by date range
+    start = pd.Timestamp(start_date)
+    end = pd.Timestamp(end_date)
+
+    # Prepare DataFrames for each index in CHF
+    chf_data = {}
+
+    for index_config in INDEXES:
+        ticker = index_config['ticker']
+        currency = index_config['currency']
+
+        if ticker not in all_data or all_data[ticker].empty:
+            continue
+
+        # Get index data
+        index_series = all_data[ticker].copy()
+
+        # Convert to CHF if needed
+        if currency == 'EUR':
+            if 'eurChf' in all_data:
+                index_series = index_series * all_data['eurChf']
+            else:
+                continue
+        elif currency == 'USD':
+            if 'usdChf' in all_data:
+                index_series = index_series * all_data['usdChf']
+            else:
                 continue
 
-            # Convert to dictionary
-            ticker_data = {}
-            first_date = None
-            for date, row in data.iterrows():
-                date_str = date.strftime('%Y-%m-%d')
-                close_price = float(row['Close'])
-                ticker_data[date_str] = close_price
-                if first_date is None:
-                    first_date = date_str
+        # Filter by date range
+        index_series = index_series[(index_series.index >= start) & (index_series.index <= end)]
 
-            result[ticker] = ticker_data
-            print(f"  → {len(ticker_data)} data points (first: {first_date})")
+        if not index_series.empty:
+            chf_data[index_config['name']] = index_series
 
-        # Back-fill exchange rates to 2000-01-01 using first available rate
-        for currency_ticker in ['eurChf', 'usdChf']:
-            if currency_ticker in result and result[currency_ticker]:
-                dates = sorted(result[currency_ticker].keys())
-                if dates:
-                    first_date = dates[0]
-                    first_rate = result[currency_ticker][first_date]
+    # Combine all data into a single DataFrame
+    df = pd.DataFrame(chf_data)
 
-                    # Generate all dates from 2000-01-01 to first available date
-                    from datetime import timedelta
-                    start = datetime(2000, 1, 1)
-                    end = datetime.strptime(first_date, '%Y-%m-%d')
+    # Filter to month-end dates only
+    df = df.resample('ME').last()
 
-                    current = start
-                    backfilled_count = 0
-                    while current < end:
-                        date_str = current.strftime('%Y-%m-%d')
-                        if date_str not in result[currency_ticker]:
-                            result[currency_ticker][date_str] = first_rate
-                            backfilled_count += 1
-                        current += timedelta(days=1)
+    # Drop rows where all values are NaN
+    df = df.dropna(how='all')
 
-                    if backfilled_count > 0:
-                        print(f"  Back-filled {currency_ticker} with {backfilled_count} days using rate {first_rate:.4f}")
+    # Forward fill missing values
+    df = df.ffill()
 
-        return jsonify(result)
+    # Normalize to base 100 (use first valid value for each column)
+    normalized_df = pd.DataFrame()
+    for col in df.columns:
+        first_valid = df[col].first_valid_index()
+        if first_valid is not None:
+            base_value = df.loc[first_valid, col]
+            normalized_df[col] = (df[col] / base_value) * 100
 
-    except Exception as e:
-        print(f"Error fetching all data: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+    return normalized_df
+
+
+def calculate_statistics(df):
+    """Calculate CAGR and total return for each index"""
+    stats = []
+
+    for col in df.columns:
+        series = df[col].dropna()
+        if len(series) < 2:
+            continue
+
+        first_value = series.iloc[0]
+        last_value = series.iloc[-1]
+
+        # Total return
+        total_return = ((last_value - first_value) / first_value) * 100
+
+        # CAGR
+        start_date = series.index[0]
+        end_date = series.index[-1]
+        years = (end_date - start_date).days / 365.25
+
+        if years > 0:
+            cagr = (pow(last_value / first_value, 1 / years) - 1) * 100
+        else:
+            cagr = 0
+
+        # Find color for this index
+        color = 'black'
+        for idx in INDEXES:
+            if idx['name'] == col:
+                color = idx['color']
+                break
+
+        stats.append({
+            'name': col,
+            'total_return': total_return,
+            'cagr': cagr,
+            'color': color
+        })
+
+    return stats
+
+
+def generate_slider_marks():
+    """Generate marks for the date slider (every 2 years)"""
+    marks = {}
+    start_year = 2000
+    end_year = datetime.now().year
+
+    for year in range(start_year, end_year + 1, 2):
+        timestamp = datetime(year, 1, 1).timestamp()
+        marks[timestamp] = {'label': str(year), 'style': {'color': '#e0e0e0'}}
+
+    # Add current year if not already there
+    current_timestamp = datetime(end_year, 1, 1).timestamp()
+    if current_timestamp not in marks:
+        marks[current_timestamp] = {'label': str(end_year), 'style': {'color': '#e0e0e0'}}
+
+    return marks
+
+
+# Dash Layout
+app.layout = html.Div(style={'backgroundColor': '#1a1a1a', 'color': '#e0e0e0', 'padding': '20px', 'fontFamily': 'sans-serif'}, children=[
+    html.H1('🚀 Index-Performance-Vergleich (CHF, Basis 100)',
+            style={'color': '#e0e0e0', 'marginBottom': '20px'}),
+
+    dcc.Loading(
+        id="loading",
+        type="default",
+        children=[
+            dcc.Graph(id='performance-chart',
+                     style={'height': '600px'})
+        ]
+    ),
+
+    html.Div([
+        html.Label('Datumsbereich wählen:', style={'marginBottom': '15px', 'display': 'block', 'fontSize': '14px', 'textAlign': 'center', 'color': '#b0b0b0'}),
+        html.Div([
+            html.Div([
+                html.Span('Von: ', style={'color': '#b0b0b0', 'marginRight': '5px'}),
+                html.Span(id='start-date-label', style={'fontWeight': 'bold', 'color': '#4da6ff', 'fontSize': '15px'})
+            ], style={'display': 'inline-block', 'marginRight': '30px'}),
+            html.Div([
+                html.Span('Bis: ', style={'color': '#b0b0b0', 'marginRight': '5px'}),
+                html.Span(id='end-date-label', style={'fontWeight': 'bold', 'color': '#4da6ff', 'fontSize': '15px'})
+            ], style={'display': 'inline-block'})
+        ], style={'marginBottom': '25px', 'textAlign': 'center'}),
+        dcc.RangeSlider(
+            id='date-range-slider',
+            min=datetime(2000, 1, 1).timestamp(),
+            max=datetime.now().timestamp(),
+            value=[datetime(2000, 1, 1).timestamp(), datetime.now().timestamp()],
+            marks=generate_slider_marks(),
+            tooltip={
+                "placement": "top",
+                "always_visible": True,
+                "template": "{value}"
+            },
+            allowCross=False
+        ),
+        html.Div(id='tooltip-formatter', style={'display': 'none'})
+    ], style={
+        'marginTop': '20px',
+        'marginBottom': '20px',
+        'padding': '20px',
+        'border': '1px solid #444',
+        'borderRadius': '5px',
+        'backgroundColor': '#2a2a2a'
+    }),
+
+    html.Div(id='statistics',
+             style={
+                 'marginTop': '20px',
+                 'padding': '15px',
+                 'backgroundColor': '#2a2a2a',
+                 'border': '1px solid #444',
+                 'borderRadius': '5px'
+             })
+])
+
+
+@app.callback(
+    [Output('start-date-label', 'children'),
+     Output('end-date-label', 'children')],
+    [Input('date-range-slider', 'value')]
+)
+def update_date_labels(slider_values):
+    """Update date labels when slider changes"""
+    start_date = datetime.fromtimestamp(slider_values[0]).strftime('%Y-%m-%d')
+    end_date = datetime.fromtimestamp(slider_values[1]).strftime('%Y-%m-%d')
+    return start_date, end_date
+
+
+# Clientside callback to format tooltip values as human-readable dates
+app.clientside_callback(
+    """
+    function(value) {
+        if (!value) return window.dash_clientside.no_update;
+
+        // Format timestamps to readable dates
+        const formatDate = (timestamp) => {
+            const date = new Date(timestamp * 1000);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        // Find all tooltip elements and update their content
+        setTimeout(() => {
+            const tooltips = document.querySelectorAll('.rc-slider-tooltip-content');
+            tooltips.forEach((tooltip, index) => {
+                if (value[index]) {
+                    tooltip.textContent = formatDate(value[index]);
+                }
+            });
+        }, 10);
+
+        return window.dash_clientside.no_update;
+    }
+    """,
+    Output('tooltip-formatter', 'children'),
+    Input('date-range-slider', 'value')
+)
+
+
+@app.callback(
+    [Output('performance-chart', 'figure'),
+     Output('statistics', 'children')],
+    [Input('date-range-slider', 'value')]
+)
+def update_chart(slider_values):
+    """Update chart and statistics based on date range"""
+
+    # Convert timestamps to date strings
+    start_date = datetime.fromtimestamp(slider_values[0]).strftime('%Y-%m-%d')
+    end_date = datetime.fromtimestamp(slider_values[1]).strftime('%Y-%m-%d')
+
+    # Fetch all data
+    all_data = fetch_all_data()
+
+    # Process and scale data
+    df = process_and_scale_data(all_data, start_date, end_date)
+
+    # Create Plotly figure
+    fig = go.Figure()
+
+    for index_config in INDEXES:
+        name = index_config['name']
+        if name in df.columns:
+            fig.add_trace(go.Scatter(
+                x=df.index,
+                y=df[name],
+                mode='lines',
+                name=name,
+                line=dict(color=index_config['color'], width=2),
+                hovertemplate='%{y:.2f}<extra></extra>'
+            ))
+
+    # Update layout
+    fig.update_layout(
+        title='Index Performance Vergleich (Basis 100 in CHF)',
+        xaxis_title='Datum',
+        yaxis_title='Indexwert (Basis 100)',
+        hovermode='x unified',
+        template='plotly_dark',
+        plot_bgcolor='#1a1a1a',
+        paper_bgcolor='#2a2a2a',
+        font=dict(color='#e0e0e0'),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        ),
+        margin=dict(l=50, r=50, t=80, b=50)
+    )
+
+    # Calculate statistics
+    stats = calculate_statistics(df)
+
+    # Create statistics display
+    stats_children = [
+        html.H2('Performance Statistiken', style={'marginTop': '0', 'color': '#4da6ff'})
+    ]
+
+    for stat in stats:
+        stats_children.append(
+            html.Div([
+                html.Div(stat['name'],
+                        style={'fontWeight': 'bold', 'color': stat['color']}),
+                html.Div([
+                    html.Span(f"Kursanstieg: ", style={'marginRight': '5px'}),
+                    html.Strong(f"{stat['total_return']:.2f}%"),
+                    html.Span(f" | CAGR: ", style={'marginLeft': '20px', 'marginRight': '5px'}),
+                    html.Strong(f"{stat['cagr']:.2f}%")
+                ])
+            ], style={
+                'display': 'flex',
+                'justifyContent': 'space-between',
+                'padding': '8px 0',
+                'borderBottom': '1px solid #444'
+            })
+        )
+
+    return fig, stats_children
 
 
 if __name__ == '__main__':
-    print("Starting Flask server...")
+    print("Starting Flask + Dash server...")
     print("Access the application at: http://localhost:5000")
-    app.run(debug=True, port=5000)
+    server.run(debug=True, port=5000)
