@@ -27,7 +27,7 @@ A web application for visualizing and comparing the performance of major financi
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/HelmutQualtinger/Charts.git
+    git clone https://github.com/HelmutQualtinger/Charts.git -b dash
     cd Charts
     ```
 
