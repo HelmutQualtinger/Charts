@@ -57,15 +57,13 @@ The application uses **Dash** (built on Flask) as the primary framework:
 ### Data Flow
 
 1. User opens `http://localhost:5000`
-2. Dash l
-3. 
-4. oads the application layout automatically
-5. On page load, the slider triggers data fetching
-6. Backend fetches data from yfinance for all tickers
-7. Backend converts foreign currency indices to CHF
-8. Backend filters to month-end dates and normalizes to base 100
-9. Plotly renders the interactive performance comparison chart
-10. When user adjusts slider, chart automatically updates
+2. Dash loads the application layout automatically
+3. On page load, the slider triggers data fetching
+4. Backend fetches data from yfinance for all tickers
+5. Backend converts foreign currency indices to CHF
+6. Backend filters to month-end dates and normalizes to base 100
+7. Plotly renders the interactive performance comparison chart
+8.  When user adjusts slider, chart automatically updates
 
 ## Development Commands
 
