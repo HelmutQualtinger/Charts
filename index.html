@@ -95,7 +95,7 @@
         <label>Datumsbereich:</label>
         <div id="dateSlider"></div>
         <div class="date-labels">
-            <span id="startDateLabel">2003-01-01</span>
+            <span id="startDateLabel">2000-01-01</span>
             <span id="endDateLabel">Heute</span>
         </div>
     </div>
@@ -128,7 +128,7 @@
 
         let performanceChart; // Variable für das Chart-Objekt
         let dateSlider;
-        let selectedStartDate = '2003-01-01';
+        let selectedStartDate = '2000-01-01';
         let selectedEndDate = new Date().toISOString().split('T')[0];
         let lastLoadDate = new Date().toDateString();
 
@@ -232,15 +232,26 @@
                 index.data.forEach(item => {
                     // Währungsumrechnung anwenden
                     let chfValue = item.close;
+                    let conversionSuccessful = true;
+
                     if (index.currency === 'EUR') {
                         const rate = exchangeRates['EUR'][item.date];
-                        if (rate) chfValue *= rate;
+                        if (rate) {
+                            chfValue *= rate;
+                        } else {
+                            conversionSuccessful = false; // Skip if exchange rate missing
+                        }
                     } else if (index.currency === 'USD') {
                         const rate = exchangeRates['USD'][item.date];
-                        if (rate) chfValue *= rate;
+                        if (rate) {
+                            chfValue *= rate;
+                        } else {
+                            conversionSuccessful = false; // Skip if exchange rate missing
+                        }
                     }
 
-                    if (chfValue) {
+                    // Only add data if conversion was successful (or no conversion needed for CHF)
+                    if (chfValue && conversionSuccessful) {
                         rawDataMap[indexName][item.date] = chfValue;
                         allDates.add(item.date);
                     }
@@ -466,7 +477,7 @@
 
         // Initialisiere Date Range Slider
         function initDateSlider() {
-            const minDate = new Date('2003-01-01').getTime();
+            const minDate = new Date('2000-01-01').getTime();
             const maxDate = new Date().getTime();
 
             dateSlider = document.getElementById('dateSlider');

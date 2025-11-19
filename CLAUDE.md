@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a financial data visualization application that displays index performance comparisons (DAX, S&P 500, SPI) normalized to a base value of 100 in CHF. The application consists of a Flask backend that fetches financial data and a single-page HTML/JavaScript frontend that renders interactive charts.
+This is a financial data visualization application that displays index performance comparisons (DAX, S&P 500, SMI, Gold) normalized to a base value of 100 in CHF. The application consists of a Flask backend that fetches financial data using yfinance and a single-page HTML/JavaScript frontend with interactive charts, date range filtering, and performance statistics.
 
 ## Architecture
 
@@ -23,7 +23,8 @@ The project has **two separate Flask servers** that serve different purposes:
    - Implements rate limiting (0.5s between requests) and retry logic with exponential backoff
    - Does NOT serve the frontend
 
-**Important**: The frontend (`index.html`) is configured to work with `server.py` by default. Both servers run on port 5000 and cannot run simultaneously.
+**Important**: The frontend (`index.html`) is configured to work with `server.py` by default. Both servers run on port 5000 and cannot run
+ simultaneously.
 
 ### Frontend
 

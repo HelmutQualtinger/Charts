@@ -78,8 +78,8 @@ def get_history(symbol):
         return jsonify({"error": "Interner Serverfehler", "details": str(e)}), 500
 
 if __name__ == '__main__':
-    # Starten Sie den Server auf Port 5001 (Standard)
+    # Starten Sie den Server auf Port 5000 (Standard)
     # Sie müssen den Browser-Code auf den gleichen Ursprung oder Port umstellen,
     # oder die CORS-Konfiguration oben verwenden.
-    print("Starte Flask Proxy auf http://127.0.0.1:5001")
-    app.run(debug=True, port=5001)
+    print("Starte Flask Proxy auf http://127.0.0.1:5000")
+    app.run(debug=True, port=5000)
