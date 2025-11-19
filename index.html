@@ -98,7 +98,6 @@
             <span id="startDateLabel">2003-01-01</span>
             <span id="endDateLabel">Heute</span>
         </div>
-        <button onclick="loadAndRenderChart()" style="margin-top: 15px;">Chart aktualisieren</button>
     </div>
 
     <div id="loading" style="display:none;">Lade Daten... Dies kann einige Sekunden dauern.</div>
@@ -528,10 +527,7 @@
         // Starte das Chart beim Laden der Seite
         document.addEventListener('DOMContentLoaded', () => {
              initDateSlider();
-             const errorDiv = document.getElementById('error');
-             errorDiv.textContent = 'Der Server (yfinance) läuft auf http://127.0.0.1:5000. Klicken Sie auf "Chart aktualisieren", um die Daten zu laden.';
-             errorDiv.style.display = 'block';
-             errorDiv.style.color = 'green';
+             loadAndRenderChart();
         });
 
     </script>

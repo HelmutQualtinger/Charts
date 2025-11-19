@@ -22,7 +22,7 @@ A web application for visualizing and comparing the performance of major financi
 
 1.  **Clone the repository:**
     ```bash
-    git clone <repository-url>
+    git clone https://github.com/HelmutQualtinger/Charts.git
     cd Charts
     ```
 
