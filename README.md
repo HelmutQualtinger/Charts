@@ -1,6 +1,8 @@
 # Index Performance Comparison Chart
 
 A web application for visualizing and comparing the performance of major financial indices and assets, normalized to a base value of 100 in Swiss Francs (CHF). Built with Flask, Dash, and Plotly for interactive data visualization.
+## Screenshot
+![Screenshot of the Index Performance Comparison Chart](chart.png)
 
 ## Features
 
