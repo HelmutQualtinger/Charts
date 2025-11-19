@@ -31,10 +31,12 @@ Hier ist ein Vergleich der Wechselkurse zwischen Euro (EUR), US-Dollar (USD) und
 ### Relative Änderung der Wechselkurse in Prozent (2000 im Vergleich zu Heute)
 
 Diese Tabelle zeigt die prozentuale relative Änderung, berechnet als `((Kurs im Jahr 2000 / Kurs heute) - 1) * 100%`.
-                                                                                                                                   █
+                                                                                                                                
+$$
    \text{Änderung in \%} = \left( \frac{\text{Kurs}_{2000}}{\text{Kurs}_{\text{heute}}} - 1 \right) \times 100               
+$$
 
-Ein negativer Wert bedeutet, dass der "From"-vKurs im Jahr 2000 gegenüber dem "To"-Kurs niedriger war als heute. Das heißt, die "From"-Währung war im Jahr 2000 relativ schwächer gegenüber der "To"-Währung als heute.
+Ein negativer Wert bedeutet, dass der "From"-Kurs im Jahr 2000 gegenüber dem "To"-Kurs niedriger war als heute. Das heißt, die "From"-Währung war im Jahr 2000 relativ schwächer gegenüber der "To"-Währung als heute.
 
 
 | From / To | EUR         | USD         | CHF         |
