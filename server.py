@@ -399,5 +399,5 @@ def update_chart(slider_values):
 
 if __name__ == '__main__':
     print("Starting Flask + Dash server...")
-    print("Access the application at: http://localhost:5000")
-    server.run(debug=True, port=5000)
+    print("Access the application at: http://localhost:8000")
+    server.run(debug=True, port=8000)

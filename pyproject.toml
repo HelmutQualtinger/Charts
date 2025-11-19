@@ -11,4 +11,5 @@ dependencies = [
     "pandas>=2.0.0",
     "dash>=2.14.0",
     "plotly>=5.18.0",
+    "ipython>=9.7.0",
 ]
