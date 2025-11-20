@@ -130,7 +130,7 @@ def process_and_scale_data(all_data, start_date, end_date):
     df = pd.DataFrame(chf_data)
 
     # Filter to month-end dates only
-    df = df.resample('ME').last()
+    df = df.resample('M').last()
 
     # Drop rows where all values are NaN
     df = df.dropna(how='all')
