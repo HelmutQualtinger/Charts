@@ -44,7 +44,7 @@ def fetch_all_data():
 
     for ticker, symbol in TICKERS.items():
         if ticker == 'smi':
-            print(f"Using hardcoded SMI data...")
+            print("Using hardcoded SMI data...")
             result['smi'] = pd.Series(smi_data)
             result['smi'].index = pd.to_datetime(result['smi'].index)
             continue
@@ -161,6 +161,10 @@ def calculate_statistics(df):
         first_value = series.iloc[0]
         last_value = series.iloc[-1]
 
+        # Skip if first value is zero or negative (cannot calculate CAGR)
+        if first_value <= 0:
+            continue
+
         # Total return
         total_return = ((last_value - first_value) / first_value) * 100
 
@@ -169,17 +173,8 @@ def calculate_statistics(df):
         end_date = series.index[-1]
         years = (end_date - start_date).days / 365.25
 
-        if years > 0:
-            cagr = (pow(last_value / first_value, 1 / years) - 1) * 100
-        else:
-            cagr = 0
-
-        # Find color for this index
-        color = 'black'
-        for idx in INDEXES:
-            if idx['name'] == col:
-                color = idx['color']
-                break
+        cagr = (pow(last_value / first_value, 1 / years) - 1) * 100 if years > 0 else 0
+        color = next((idx['color'] for idx in INDEXES if idx['name'] == col), 'black')
 
         stats.append({
             'name': col,
@@ -381,9 +376,9 @@ def update_chart(slider_values):
                 html.Div(stat['name'],
                         style={'fontWeight': 'bold', 'color': stat['color']}),
                 html.Div([
-                    html.Span(f"Kursanstieg: ", style={'marginRight': '5px'}),
+                    html.Span("Kursanstieg: ", style={'marginRight': '5px'}),
                     html.Strong(f"{stat['total_return']:.2f}%"),
-                    html.Span(f" | CAGR: ", style={'marginLeft': '20px', 'marginRight': '5px'}),
+                    html.Span(" | CAGR: ", style={'marginLeft': '20px', 'marginRight': '5px'}),
                     html.Strong(f"{stat['cagr']:.2f}%")
                 ])
             ], style={
@@ -400,4 +395,4 @@ def update_chart(slider_values):
 if __name__ == '__main__':
     print("Starting Flask + Dash server...")
     print("Access the application at: http://localhost:8000")
-    server.run(debug=True, port=8000)
+    server.run(debug=False, port=8000)
