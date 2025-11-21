@@ -12,6 +12,7 @@ dependencies = [
     "dash>=2.14.0",
     "plotly>=5.18.0",
     "ipython>=9.7.0",
+    "matplotlib>=3.10.7",
 ]
 
 [tool.uv.workspace]
