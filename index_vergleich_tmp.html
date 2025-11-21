@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>index_vergleich.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="vergleichende-index-analyse-stand-21-november-2025">Vergleichende Index-Analyse (Stand: 21. November 2025)</h1>
+<h2 id="swiss-market-index-smi-total-return">Swiss Market Index (SMI) Total Return</h2>
+<h2 id="sp-500-total-return">S&amp;P 500 Total Return</h2>
+<h2 id="nasdaq-100-total-return">NASDAQ-100 Total Return</h2>
+<h3 id="1-zeitraum-der-betrachtung">1. Zeitraum der Betrachtung</h3>
+<ul>
+<li>Betrachtet wird die Total-Return-Entwicklung (Kurs + reinvestierte Dividenden)</li>
+<li>von Jahresende 2000 bis November 2025 (ca. 25 Jahre)</li>
+</ul>
+<h3 id="2-zusammenfassung-der-gesamtrenditen-und-j%C3%A4hrlichen-renditen">2. Zusammenfassung der Gesamtrenditen und jährlichen Renditen</h3>
+<table>
+<thead>
+<tr>
+<th>Index</th>
+<th>Startwert Ende 2000</th>
+<th>Aktueller Wert Nov 2025</th>
+<th>Gesamtrendite (kumulativ)</th>
+<th>CAGR (ca.)</th>
+<th>Inflation-bereinigter CAGR</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NASDAQ-100 Total Return</td>
+<td>ca. 2.470 Punkte</td>
+<td>ca. 25.500 Punkte</td>
+<td>+900 % bis +1.000 %</td>
+<td>9,8–10,2 %</td>
+<td>ca. 7,3–7,7 %</td>
+</tr>
+<tr>
+<td>S&amp;P 500 Total Return</td>
+<td>ca. 1.320 Punkte</td>
+<td>ca. 9.800 Punkte</td>
+<td>+610 % bis +620 %</td>
+<td>7,9–8,0 %</td>
+<td>ca. 5,4–5,5 %</td>
+</tr>
+<tr>
+<td>SMI Total Return (SMIC)</td>
+<td>ca. 4.500 Punkte</td>
+<td>ca. 31.700 Punkte</td>
+<td>+600 % bis +650 %</td>
+<td>7,5–7,8 %</td>
+<td>ca. 5,0–5,3 %</td>
+</tr>
+</tbody>
+</table>
+<h3 id="3-risiko--und-volatilit%C3%A4tsvergleich-2000%E2%80%932025">3. Risiko- und Volatilitätsvergleich (2000–2025)</h3>
+<table>
+<thead>
+<tr>
+<th>Index</th>
+<th>Max. Drawdown (2000–2025)</th>
+<th>Durchschn. jährliche Volatilität</th>
+<th>Beta (vs. Weltmarkt)</th>
+<th>Anteil Dividenden an Gesamtrendite</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NASDAQ-100</td>
+<td>–83 % (2000–2002)</td>
+<td>ca. 25–28 %</td>
+<td>1,25–1,35</td>
+<td>ca. 12–15 %</td>
+</tr>
+<tr>
+<td>S&amp;P 500</td>
+<td>–51 % (2007–2009)</td>
+<td>ca. 17–19 %</td>
+<td>1,00</td>
+<td>ca. 35–40 %</td>
+</tr>
+<tr>
+<td>SMI</td>
+<td>–56 % (2007–2009)</td>
+<td>ca. 15–17 %</td>
+<td>0,80–0,85</td>
+<td>ca. 45–50 %</td>
+</tr>
+</tbody>
+</table>
+<h3 id="4-konzentration-top-10-gewichtung-stand-nov-2025">4. Konzentration (Top-10-Gewichtung, Stand Nov 2025)</h3>
+<table>
+<thead>
+<tr>
+<th>Index</th>
+<th>Anteil Top-3</th>
+<th>Anteil Top-10</th>
+<th>Stärkste Sektoren</th>
+<th>Bemerkung</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NASDAQ-100</td>
+<td>ca. 34 %</td>
+<td>ca. 55 %</td>
+<td>Informationstechnologie (~70 %)</td>
+<td>Extrem tech-lastig</td>
+</tr>
+<tr>
+<td>S&amp;P 500</td>
+<td>ca. 16 %</td>
+<td>ca. 33 %</td>
+<td>IT (~30 %), Finanzen, Gesundheit</td>
+<td>Ausgeglichener, aber Tech-dominiert</td>
+</tr>
+<tr>
+<td>SMI</td>
+<td>ca. 50 %</td>
+<td>ca. 90 %</td>
+<td>Gesundheit (~45 %), Konsum, Finanzen</td>
+<td>Sehr hoch konzentriert (Nestlé/Roche/Novartis)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="5-top-10-komponenten-auszug-nov-2025">5. Top-10-Komponenten (Auszug, Nov 2025)</h3>
+<table>
+<thead>
+<tr>
+<th>Rang</th>
+<th>NASDAQ-100</th>
+<th>S&amp;P 500</th>
+<th>SMI</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>NVIDIA (~14,8 %)</td>
+<td>Apple (~5,4 %)</td>
+<td>Nestlé (~18 %)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Apple (~9,5 %)</td>
+<td>Microsoft (~5,3 %)</td>
+<td>Roche (~18 %)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Microsoft (~9,3 %)</td>
+<td>NVIDIA (~5,0 %)</td>
+<td>Novartis (~18 %)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Amazon (~7,0 %)</td>
+<td>Amazon (~4,0 %)</td>
+<td>UBS (~10 %)</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Alphabet C (~6,6 %)</td>
+<td>Alphabet C (~3,7 %)</td>
+<td>Richemont (~8 %)</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Alphabet A (~6,3 %)</td>
+<td>Alphabet A (~3,6 %)</td>
+<td>ABB (~7 %)</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Meta (~5,4 %)</td>
+<td>Meta (~3,1 %)</td>
+<td>Zurich Insurance (~7 %)</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Broadcom (~3,6 %)</td>
+<td>Broadcom (~2,0 %)</td>
+<td>Swiss Re (~6 %)</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Tesla (~3,3 %)</td>
+<td>Tesla (~1,9 %)</td>
+<td>Givaudan (~5 %)</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Costco (~1,4 %)</td>
+<td>Berkshire Hathaway (~1,7 %)</td>
+<td>Lonza (~5 %)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="6-fazit--anleger-einordnung">6. Fazit &amp; Anleger-Einordnung</h3>
+<table>
+<thead>
+<tr>
+<th>Index</th>
+<th>Ideal für</th>
+<th>Weniger geeignet für</th>
+<th>Gesamtbewertung (2000–2025)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NASDAQ-100</td>
+<td>Wachstumsorientierte, risikobereite Anleger</td>
+<td>Konservative oder einkommensorientierte Anleger</td>
+<td>Höchste Rendite, höchste Volatilität</td>
+</tr>
+<tr>
+<td>S&amp;P 500</td>
+<td>Kernanlage für die meisten Portfolios</td>
+<td>Extrem risikoscheue oder stark schweizlastige Anleger</td>
+<td>Beste Risiko-Rendite-Kombination</td>
+</tr>
+<tr>
+<td>SMI</td>
+<td>Dividenden- und defensiv orientierte Anleger</td>
+<td>Stark wachstumsorientierte Anleger</td>
+<td>Stabilste Entwicklung, hoher Dividendenanteil</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Schlussbemerkung</strong><br>
+In den letzten 25 Jahren hat der NASDAQ-100 die höchste Rendite geliefert, aber zu deutlich höherem Risiko. Der S&amp;P 500 bot das attraktivste Risiko-Rendite-Verhältnis und bleibt die Benchmark für globale Aktienanlagen. Der SMI liegt leicht hinter dem S&amp;P 500 zurück, überzeugt jedoch durch geringere Schwankungen und einen sehr hohen Dividendenbeitrag – ideal als defensiver Baustein in einem diversifizierten Portfolio.</p>
+<p>Stand der Daten: 21. November 2025<br>
+Historische Renditen sind keine Garantie für die Zukunft.</p>
+
+</body>
+</html>

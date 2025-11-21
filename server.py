@@ -9,7 +9,85 @@ import plotly.graph_objects as go
 import yfinance as yf
 from datetime import datetime, timedelta
 import pandas as pd
-from smic import smi as smi_data
+from smic2 import smi as smi_data
+
+# CSS for animated tiles
+TILE_STYLES = """
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(77, 166, 255, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 0 10px rgba(77, 166, 255, 0);
+    }
+}
+
+.stat-tile {
+    animation: slideIn 0.6s ease-out forwards;
+    background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 10px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    flex: 1;
+    min-width: 200px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.stat-tile:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 12px rgba(77, 166, 255, 0.2);
+    border-color: #4da6ff;
+}
+
+.stat-tile-index {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid;
+}
+
+.stat-tile-metric {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 10px 0;
+    padding: 8px 0;
+    font-size: 14px;
+    color: #b0b0b0;
+}
+
+.stat-tile-label {
+    font-weight: 500;
+}
+
+.stat-tile-value {
+    font-weight: bold;
+    font-size: 16px;
+    color: #4da6ff;
+}
+
+.stats-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: space-around;
+}
+"""
 
 # Flask app
 server = Flask(__name__)
@@ -22,6 +100,8 @@ TICKERS = {
     'dax': '^GDAXI',  # DAX Total Return
     'smi': 'SMIC.SW',  # SMI Total Return Index
     'sp500': '^SP500TR',  # S&P 500 Total Return
+    'nasdaq100': 'QQQ',  # NASDAQ-100 (represented by QQQ ETF)
+    'stoxx50': '^STOXX50E',  # STOXX 50 Total Return
     'gold': 'GC=F',  # Gold Futures
     'eurChf': 'EURCHF=X',
     'usdChf': 'USDCHF=X'
@@ -31,6 +111,8 @@ TICKERS = {
 INDEXES = [
     {'name': 'DAX (TR)', 'ticker': 'dax', 'currency': 'EUR', 'color': 'rgb(0, 104, 182)'},
     {'name': 'S&P 500 (TR)', 'ticker': 'sp500', 'currency': 'USD', 'color': 'rgb(75, 192, 192)'},
+    {'name': 'NASDAQ-100 (TR)', 'ticker': 'nasdaq100', 'currency': 'USD', 'color': 'rgb(255, 165, 0)'},
+    {'name': 'STOXX 50 (TR)', 'ticker': 'stoxx50', 'currency': 'EUR', 'color': 'rgb(144, 238, 144)'},
     {'name': 'SMI (TR)', 'ticker': 'smi', 'currency': 'CHF', 'color': 'rgb(255, 99, 132)'},
     {'name': 'Gold', 'ticker': 'gold', 'currency': 'USD', 'color': 'rgb(255, 215, 0)'}
 ]
@@ -365,29 +447,42 @@ def update_chart(slider_values):
     # Calculate statistics
     stats = calculate_statistics(df)
 
-    # Create statistics display
+    # Create statistics display with animated tiles
     stats_children = [
-        html.H2('Performance Statistiken', style={'marginTop': '0', 'color': '#4da6ff'})
-    ]
-
-    for stat in stats:
-        stats_children.append(
-            html.Div([
-                html.Div(stat['name'],
-                        style={'fontWeight': 'bold', 'color': stat['color']}),
-                html.Div([
-                    html.Span("Kursanstieg: ", style={'marginRight': '5px'}),
-                    html.Strong(f"{stat['total_return']:.2f}%"),
-                    html.Span(" | CAGR: ", style={'marginLeft': '20px', 'marginRight': '5px'}),
-                    html.Strong(f"{stat['cagr']:.2f}%")
+        html.H2('Performance Statistiken', style={'marginTop': '0', 'marginBottom': '20px', 'color': '#4da6ff', 'textAlign': 'center'}),
+        html.Div(style={'display': 'flex', 'flexWrap': 'wrap', 'gap': '10px', 'justifyContent': 'space-around'}, children=[
+            html.Div(style={
+                'background': 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%)',
+                'border': f'1px solid {stat["color"]}',
+                'borderRadius': '8px',
+                'padding': '20px',
+                'margin': '10px',
+                'flex': '1',
+                'minWidth': '200px',
+                'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.3)',
+                'transition': 'all 0.3s ease',
+                'cursor': 'pointer'
+            }, children=[
+                html.Div(stat['name'], style={
+                    'fontSize': '18px',
+                    'fontWeight': 'bold',
+                    'marginBottom': '15px',
+                    'paddingBottom': '10px',
+                    'borderBottom': f'2px solid {stat["color"]}',
+                    'color': stat['color']
+                }),
+                html.Div(style={'display': 'flex', 'justifyContent': 'space-between', 'alignItems': 'center', 'margin': '10px 0', 'padding': '8px 0', 'fontSize': '14px', 'color': '#b0b0b0'}, children=[
+                    html.Span("Kursanstieg:"),
+                    html.Span(f"{stat['total_return']:.2f}%", style={'fontWeight': 'bold', 'fontSize': '16px', 'color': '#4da6ff'})
+                ]),
+                html.Div(style={'display': 'flex', 'justifyContent': 'space-between', 'alignItems': 'center', 'margin': '10px 0', 'padding': '8px 0', 'fontSize': '14px', 'color': '#b0b0b0'}, children=[
+                    html.Span("CAGR:"),
+                    html.Span(f"{stat['cagr']:.2f}%", style={'fontWeight': 'bold', 'fontSize': '16px', 'color': '#4da6ff'})
                 ])
-            ], style={
-                'display': 'flex',
-                'justifyContent': 'space-between',
-                'padding': '8px 0',
-                'borderBottom': '1px solid #444'
-            })
-        )
+            ])
+            for i, stat in enumerate(stats)
+        ])
+    ]
 
     return fig, stats_children
 
@@ -395,4 +490,4 @@ def update_chart(slider_values):
 if __name__ == '__main__':
     print("Starting Flask + Dash server...")
     print("Access the application at: http://localhost:8000")
-    server.run(debug=False, port=8000)
+    server.run(debug=False, host='0.0.0.0', port=8000)
